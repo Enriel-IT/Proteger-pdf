@@ -108,10 +108,29 @@ ventana.title("Protector de PDF - con contraseña segura")
 ventana.geometry("620x380")
 ventana.resizable(False, False)
 
-# Estilo básico
+# Estilo visual: color de ventana azul Vivanta
+VIVANTA = "#1d2946"  # azul Vivanta
+ventana.configure(bg=VIVANTA)
+
+# Forzar un tema que permita personalización (mejor comportamiento en plataformas)
 style = ttk.Style()
-style.configure("TLabel", font=("Segoe UI", 10))
-style.configure("TButton", font=("Segoe UI", 10))
+try:
+    style.theme_use('clam')
+except Exception:
+    pass
+
+# Etiqueta principal (título) visible al abrir la aplicación
+title_label = tk.Label(ventana, text="Protector de Pdf  by Milagros Regal:",
+                       font=("Segoe UI", 18, "bold"), bg=VIVANTA, fg="white")
+title_label.pack(pady=(12,6))
+
+# Estilos para ttk - ajustados para buen contraste sobre el fondo Vivanta
+style.configure("TLabel", font=("Segoe UI", 10), background=VIVANTA, foreground="white")
+style.configure("TButton", font=("Segoe UI", 10), background="#25407a", foreground="white")
+style.configure("Accent.TButton", font=("Segoe UI", 12, "bold"), background="#183057", foreground="white")
+style.map("Accent.TButton",
+          background=[('active', '#122b4a'), ('pressed', '#0e2138')],
+          foreground=[('active', 'white')])
 
 # Variables
 entrada_var = tk.StringVar()
@@ -147,10 +166,12 @@ ttk.Label(ventana, text="Contraseña generada (cópiala ahora):", font=("Segoe U
 
 frame_pass = ttk.Frame(ventana)
 frame_pass.pack(fill="x", padx=20)
-ttk.Entry(frame_pass, textvariable=password_var, width=40, show="•", font=("Consolas", 12)).pack(side="left", padx=(0,10))
+# mostrar la contraseña en claro (sin ocultar con •)
+ttk.Entry(frame_pass, textvariable=password_var, width=40, font=("Consolas", 12)).pack(side="left", padx=(0,10))
 
-ttk.Button(frame_pass, text="Nueva contraseña", command=lambda: password_var.set(generar_contrasena_fuerte(16))).pack(side="left")
+# Botones: primero COPIAR (izquierda), luego NUEVA CONTRASEÑA (derecha)
 ttk.Button(frame_pass, text="Copiar", command=lambda: ventana.clipboard_clear() or ventana.clipboard_append(password_var.get()) or messagebox.showinfo("Copiado", "Contraseña copiada al portapapeles")).pack(side="left", padx=10)
+ttk.Button(frame_pass, text="Nueva contraseña", command=lambda: password_var.set(generar_contrasena_fuerte(16))).pack(side="left")
 
 # Reemplazamos la creación del botón por una asignación a la variable global
 btn_proteger = ttk.Button(ventana, text="PROTEGER PDF AHORA", command=proteger_pdf,
@@ -159,5 +180,31 @@ btn_proteger.pack(pady=30)
 
 # Botón de estilo acentuado (opcional, requiere tema)
 style.configure("Accent.TButton", font=("Segoe UI", 12, "bold"))
+
+# Añadir icono `tren.ico` en la esquina inferior derecha (usa importlib para PIL si está disponible)
+icon_path = os.path.join(os.path.dirname(__file__), 'tren.ico')
+_icon_image = None
+if os.path.exists(icon_path):
+    try:
+        # importar PIL dinámicamente para evitar problemas si no está instalado
+        import importlib
+        pil_image = importlib.import_module('PIL.Image')
+        pil_imagetk = importlib.import_module('PIL.ImageTk')
+        img = pil_image.open(icon_path)
+        img.thumbnail((64, 64), pil_image.LANCZOS)
+        _icon_image = pil_imagetk.PhotoImage(img)
+    except Exception:
+        try:
+            # Intentar con PhotoImage directo (limitado en formatos)
+            _icon_image = tk.PhotoImage(file=icon_path)
+        except Exception:
+            _icon_image = None
+
+if _icon_image is not None:
+    icon_label = tk.Label(ventana, image=_icon_image, bg=VIVANTA, bd=0)
+    # guardar referencia para evitar que Python recolecte la imagen
+    icon_label.image = _icon_image
+    # colocar en la esquina inferior derecha con pequeño padding
+    icon_label.place(relx=1.0, rely=1.0, anchor='se', x=-12, y=-12)
 
 ventana.mainloop()
